@@ -32,15 +32,19 @@ jobs:
               --content-type "text/plain" \
               --overwrite
 
+      - name: Install function dependencies
+        run: |
+          cd function
+          npm install --omit=dev --silent
+
+      - name: Zip function for deployment
+        run: zip -r /tmp/function.zip function/
+
       - name: Deploy Azure Function
         uses: azure/CLI@v2
         with:
           azcliversion: latest
           inlineScript: |
-            cd function
-            npm install --omit=dev --silent
-            cd ..
-            zip -r /tmp/function.zip function/
             az functionapp deployment source config-zip \
               --name kids-schedule-fn \
               --resource-group kids-schedule-rg \
