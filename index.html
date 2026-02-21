@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive, noimageindex, nosnippet">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://nominatim.openstreetmap.org https://kidsschedvxtpds.blob.core.windows.net https://kids-schedule-fn.azurewebsites.net; img-src data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <title>Parker &amp; Bennett — March 3–6 Schedule</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -586,9 +588,13 @@ const CAL_START = 6;   // 6 AM
 const CAL_END   = 22;  // 10 PM
 const PX_PER_HR = 64;
 const STORAGE_KEY = 'kids-schedule-v1';
+// Read-only SAS (r permission, expires 2026-03-31) — safe to embed for GET
 const BLOB_URL = 'https://kidsschedvxtpds.blob.core.windows.net/data/events.json' +
-  '?se=2026-12-31&sp=rcwd&spr=https&sv=2026-02-06&sr=b' +
-  '&sig=1X1I304yUqrzf3Cin15%2Bk64RnjiHdDNIQTIEGWYOjMo%3D';
+  '?se=2026-03-31&sp=r&spr=https&sv=2026-02-06&sr=b' +
+  '&sig=IH%2Bou62RyH8gwVmQkRSj2ksmDJE833J5LV3POpYBR24%3D';
+// Write proxy — Azure Function holds the storage write key server-side
+const FUNC_URL = 'https://kids-schedule-fn.azurewebsites.net/api/saveEvents' +
+  '?code=SDZZkCVvcgPpWnSqDhwq4a_DuplxfhHVMk8ADR0JTLAdAzFuWixqhQ%3D%3D';
 
 let events = [];
 
@@ -630,12 +636,9 @@ async function persist() {
   localStorage.setItem(STORAGE_KEY, body); // always keep local backup
   showSync('saving', '⟳ Saving…');
   try {
-    const r = await fetch(BLOB_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-ms-blob-type': 'BlockBlob',
-      },
+    const r = await fetch(FUNC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body,
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -940,7 +943,7 @@ function buildDayColumn(day, col) {
     el.innerHTML = `
       <div class="ev-title">${ev.repeatId ? '🔁 ' : ''}${esc(ev.title)}</div>
       ${htPx > 38 ? `<div class="ev-time">${fmtTime(ev.start)}${ev.end ? ' – ' + fmtTime(ev.end) : ''}</div>` : ''}
-      ${htPx > 54 && ev.location ? `<div class="ev-location"><a href="${mapsUrl(ev.location)}" target="_blank" onclick="event.stopPropagation()">📍 ${esc(ev.location)}</a></div>` : ''}
+      ${htPx > 54 && ev.location ? `<div class="ev-location"><a href="${mapsUrl(ev.location)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">📍 ${esc(ev.location)}</a></div>` : ''}
       ${htPx > 70 ? `<div class="ev-who">${esc(ev.child)}</div>` : ''}
     `;
     el.onclick = e => { e.stopPropagation(); openModal(null, null, ev.id); };
@@ -1144,7 +1147,7 @@ function renderAgenda() {
             <div class="agenda-event-title">${ev.repeatId ? '🔁 ' : ''}${esc(ev.title)}</div>
             <div class="agenda-event-who">${esc(ev.child)}</div>
             ${ev.notes ? `<div class="agenda-event-notes">${esc(ev.notes)}</div>` : ''}
-            ${ev.location ? `<div class="agenda-event-location">📍 <a href="${mapsUrl(ev.location)}" target="_blank" onclick="event.stopPropagation()">${esc(ev.location)}</a></div>` : ''}
+            ${ev.location ? `<div class="agenda-event-location">📍 <a href="${mapsUrl(ev.location)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(ev.location)}</a></div>` : ''}
           </div>
         `;
         row.onclick = () => openModal(null, null, ev.id);

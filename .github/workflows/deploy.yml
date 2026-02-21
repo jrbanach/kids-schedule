@@ -2,7 +2,7 @@ name: Deploy to Azure
 
 on:
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   deploy:
@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Upload to Azure Blob Storage
+      - name: Upload static site to Azure Blob Storage
         uses: azure/CLI@v2
         with:
           azcliversion: latest
@@ -23,6 +23,29 @@ jobs:
               --name index.html \
               --content-type "text/html" \
               --overwrite
+            az storage blob upload \
+              --account-name kidsschedvxtpds \
+              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
+              --container-name '$web' \
+              --file robots.txt \
+              --name robots.txt \
+              --content-type "text/plain" \
+              --overwrite
+
+      - name: Deploy Azure Function
+        uses: azure/CLI@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            cd function
+            npm install --omit=dev --silent
+            cd ..
+            zip -r /tmp/function.zip function/
+            az functionapp deployment source config-zip \
+              --name kids-schedule-fn \
+              --resource-group kids-schedule-rg \
+              --src /tmp/function.zip \
+              --output none
 
       - name: Print live URL
         run: echo "Deployed to https://kidsschedvxtpds.z20.web.core.windows.net/"

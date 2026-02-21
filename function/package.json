@@ -1,0 +1,9 @@
+{
+  "name": "kids-schedule-fn",
+  "version": "1.0.0",
+  "main": "src/functions/*.js",
+  "dependencies": {
+    "@azure/functions": "^4.5.0",
+    "@azure/storage-blob": "^12.25.0"
+  }
+}
