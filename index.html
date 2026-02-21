@@ -881,7 +881,7 @@ function mapsUrl(location) {
 // ─────────────────────────────────────────────────────────────────────────────
 // VIEW SWITCHING
 // ─────────────────────────────────────────────────────────────────────────────
-let currentView = 'day';
+let currentView = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'day' : 'week';
 let currentDayIdx = 0;
 
 function switchView(v) {
