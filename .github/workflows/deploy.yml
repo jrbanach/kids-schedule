@@ -37,19 +37,12 @@ jobs:
           cd function
           npm install --omit=dev --silent
 
-      - name: Zip function for deployment
-        run: zip -r /tmp/function.zip function/
-
       - name: Deploy Azure Function
-        uses: azure/CLI@v2
+        uses: Azure/functions-action@v1
         with:
-          azcliversion: latest
-          inlineScript: |
-            az functionapp deployment source config-zip \
-              --name kids-schedule-fn \
-              --resource-group kids-schedule-rg \
-              --src /tmp/function.zip \
-              --output none
+          app-name: kids-schedule-fn
+          package: function
+          publish-profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_PROFILE }}
 
       - name: Print live URL
         run: echo "Deployed to https://kidsschedvxtpds.z20.web.core.windows.net/"
