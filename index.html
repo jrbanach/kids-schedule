@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parker &amp; Bennett — March 3–6 Schedule</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; font-size: 14px; }
+
+    /* ── Header ── */
+    .app-header {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .app-title { font-size: 1.15rem; font-weight: 700; color: #1e293b; white-space: nowrap; }
+    .app-title .subtitle { font-size: 0.85rem; font-weight: 400; color: #64748b; margin-left: 6px; }
+    .legend { display: flex; gap: 14px; align-items: center; font-size: 0.78rem; color: #64748b; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+    .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 6px 13px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .btn-primary   { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .btn-primary:hover { background: #2563eb; border-color: #2563eb; }
+    .btn-outline   { background: white; color: #374151; border-color: #d1d5db; }
+    .btn-outline:hover { background: #f9fafb; }
+    .btn-danger    { background: #ef4444; color: white; border-color: #ef4444; }
+    .btn-danger:hover { background: #dc2626; }
+
+    .view-toggle { display: flex; gap: 3px; background: #f1f5f9; padding: 3px; border-radius: 7px; }
+    .view-toggle .btn {
+      border-radius: 5px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      padding: 5px 12px;
+    }
+    .view-toggle .btn.active {
+      background: white;
+      color: #1e293b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* ── Calendar View ── */
+    #calendar-view { display: none; overflow: auto; height: calc(100vh - 55px); }
+    #calendar-view.active { display: block; }
+
+    /* ── Day view ── */
+    #day-view { display: none; overflow: auto; height: calc(100vh - 55px); touch-action: pan-y; }
+    #day-view.active { display: block; }
+
+    .day-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: white; border-bottom: 2px solid #e2e8f0;
+      padding: 8px 16px; position: sticky; top: 0; z-index: 50;
+      user-select: none;
+    }
+    .day-nav-btn {
+      background: none; border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 1.5rem; width: 44px; height: 44px; cursor: pointer;
+      color: #374151; display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s; line-height: 1;
+    }
+    .day-nav-btn:hover  { background: #f1f5f9; }
+    .day-nav-btn:disabled { opacity: 0.25; cursor: default; }
+    .day-nav-center { text-align: center; }
+    .day-nav-label  { font-size: 1rem; font-weight: 700; color: #1e293b; display: block; }
+    .day-nav-dots   { display: flex; gap: 7px; justify-content: center; margin-top: 5px; }
+    .day-nav-dot    { width: 7px; height: 7px; border-radius: 50%; background: #e2e8f0; transition: background 0.15s; }
+    .day-nav-dot.active { background: #3b82f6; }
+
+    .day-grid { display: grid; grid-template-columns: 56px 1fr; background: white; }
+
+    /* ── Swipe track (3 panels side-by-side, viewport clips to middle) ── */
+    .day-swipe-viewport { overflow: hidden; width: 100%; }
+    .day-swipe-track {
+      display: flex;
+      width: 300%;
+      will-change: transform;
+      /* default: show middle panel */
+      transform: translateX(-33.3333%);
+    }
+    .day-swipe-panel {
+      width: 33.3333%;
+      flex-shrink: 0;
+    }
+
+    .cal-header-row {
+      display: grid;
+      grid-template-columns: 56px repeat(4, 1fr);
+      background: white;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .cal-header-cell { padding: 10px 6px 8px; text-align: center; }
+    .cal-header-cell .day-abbr { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; }
+    .cal-header-cell .day-num  { font-size: 1.6rem; font-weight: 300; color: #1e293b; line-height: 1.1; margin-top: 1px; }
+
+    .cal-body { display: grid; grid-template-columns: 56px repeat(4, 1fr); background: white; }
+
+    .cal-time-col { }
+    .cal-time-label {
+      height: 64px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 3px 8px 0 0;
+      font-size: 0.68rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .cal-day-col { border-left: 1px solid #e2e8f0; position: relative; }
+
+    .cal-hour-slot {
+      height: 64px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      position: absolute;
+      left: 0; right: 0;
+    }
+    .cal-hour-slot:hover { background: #f8fafc; }
+
+    .cal-half-line {
+      position: absolute;
+      left: 0; right: 0;
+      border-bottom: 1px dashed #f1f5f9;
+      pointer-events: none;
+    }
+
+    .cal-event {
+      position: absolute;
+      left: 2px; right: 2px;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      overflow: hidden;
+      z-index: 10;
+      border-left: 3px solid;
+      transition: filter 0.12s;
+    }
+    .cal-event:hover { filter: brightness(0.93); }
+    .cal-event .ev-title    { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-event .ev-time     { font-size: 0.67rem; opacity: 0.75; }
+    .cal-event .ev-who      { font-size: 0.67rem; opacity: 0.75; }
+    .cal-event .ev-location { font-size: 0.67rem; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-event .ev-location a { color: inherit; text-decoration: underline dotted; }
+    .cal-event .ev-location a:hover { text-decoration: underline; }
+
+    /* ── Child color classes ── */
+    .child-parker  { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
+    .child-bennett { background: #d1fae5; border-color: #10b981; color: #064e3b; }
+    .child-both    { background: #ede9fe; border-color: #8b5cf6; color: #3b0764; }
+
+    /* ── Agenda View ── */
+    #agenda-view { display: none; padding: 24px 20px; max-width: 760px; margin: 0 auto; }
+    #agenda-view.active { display: block; }
+
+    .agenda-day { margin-bottom: 32px; }
+    .agenda-day-header {
+      font-size: 0.975rem;
+      font-weight: 700;
+      color: #1e293b;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 7px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .agenda-day-header .date-label { font-size: 0.82rem; font-weight: 400; color: #64748b; }
+
+    .agenda-event {
+      display: flex;
+      gap: 14px;
+      padding: 9px 12px;
+      border-radius: 7px;
+      margin-bottom: 5px;
+      border-left: 4px solid;
+      align-items: flex-start;
+      cursor: pointer;
+      transition: filter 0.12s;
+    }
+    .agenda-event:hover { filter: brightness(0.95); }
+    .agenda-event-time { font-size: 0.78rem; color: #64748b; white-space: nowrap; min-width: 84px; padding-top: 2px; line-height: 1.5; }
+    .agenda-event-body { flex: 1; }
+    .agenda-event-title { font-weight: 600; font-size: 0.9rem; }
+    .agenda-event-who   { font-size: 0.78rem; color: #64748b; margin-top: 1px; }
+    .agenda-event-notes    { font-size: 0.78rem; color: #475569; margin-top: 3px; font-style: italic; }
+    .agenda-event-location { font-size: 0.78rem; color: #3b82f6; margin-top: 3px; }
+    .agenda-event-location a { color: #3b82f6; text-decoration: none; }
+    .agenda-event-location a:hover { text-decoration: underline; }
+
+    /* ── Location autocomplete dropdown ── */
+    .location-wrap { position: relative; }
+    .location-suggestions {
+      position: absolute;
+      top: calc(100% + 3px);
+      left: 0; right: 0;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      z-index: 300;
+      max-height: 220px;
+      overflow-y: auto;
+      display: none;
+    }
+    .location-suggestions.open { display: block; }
+    .location-suggestion {
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      color: #1e293b;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      line-height: 1.4;
+    }
+    .location-suggestion:last-child { border-bottom: none; }
+    .location-suggestion:hover, .location-suggestion.active { background: #eff6ff; color: #1d4ed8; }
+    .location-suggestion .sug-main { font-weight: 500; }
+    .location-suggestion .sug-sub  { font-size: 0.75rem; color: #94a3b8; margin-top: 1px; }
+    .location-searching { padding: 10px 12px; font-size: 0.82rem; color: #94a3b8; text-align: center; }
+    .agenda-empty { color: #94a3b8; font-style: italic; font-size: 0.85rem; padding: 4px 0; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      width: 460px;
+      max-width: 95vw;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      animation: modal-in 0.15s ease;
+    }
+    @keyframes modal-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    .modal-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 700; }
+    .modal-close {
+      background: none; border: none;
+      font-size: 1.1rem; cursor: pointer;
+      color: #94a3b8; line-height: 1; padding: 0;
+      transition: color 0.12s;
+    }
+    .modal-close:hover { color: #475569; }
+
+    .modal-body   { padding: 18px 22px; }
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-footer-right { display: flex; gap: 7px; }
+
+    /* ── Repeat days ── */
+    .repeat-days { display: flex; gap: 6px; flex-wrap: wrap; }
+    .rday-label {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 5px;
+      border: 1.5px solid #e2e8f0;
+      cursor: pointer; font-size: 0.82rem; font-weight: 500;
+      transition: all 0.12s; user-select: none;
+    }
+    .rday-label input { display: none; }
+    .rday-label:hover { border-color: #94a3b8; }
+    .rday-label.checked { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+    .rday-label.primary { border-color: #3b82f6; background: #dbeafe; color: #1d4ed8; font-weight: 700; }
+
+    /* ── Edit-scope banner ── */
+    .repeat-banner {
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 7px; padding: 9px 12px; margin-bottom: 14px;
+      font-size: 0.82rem; color: #166534;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    }
+    .repeat-banner .scope-btns { display: flex; gap: 5px; }
+    .scope-btn {
+      padding: 4px 10px; border-radius: 5px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; border: 1.5px solid #86efac; background: white; color: #166534;
+      transition: all 0.12s;
+    }
+    .scope-btn.active { background: #16a34a; color: white; border-color: #16a34a; }
+
+    .form-group { margin-bottom: 13px; }
+    .form-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-control {
+      width: 100%;
+      padding: 7px 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.12s, box-shadow 0.12s;
+      font-family: inherit;
+      color: #1e293b;
+    }
+    .form-control:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+
+    textarea.form-control { resize: vertical; min-height: 56px; }
+
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 11px center;
+      padding-right: 30px;
+    }
+
+    .child-selector { display: flex; gap: 7px; }
+    .child-btn {
+      flex: 1;
+      padding: 7px;
+      border-radius: 6px;
+      border: 2px solid #e2e8f0;
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.12s;
+      text-align: center;
+      font-family: inherit;
+    }
+    .child-btn:hover { border-color: #cbd5e1; }
+    .child-btn.sel-parker  { border-color: #3b82f6; background: #dbeafe; color: #1e3a8a; }
+    .child-btn.sel-bennett { border-color: #10b981; background: #d1fae5; color: #064e3b; }
+    .child-btn.sel-both    { border-color: #8b5cf6; background: #ede9fe; color: #3b0764; }
+
+    /* ── Sync status pill ── */
+    .sync-status { font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; white-space: nowrap; transition: all 0.3s; }
+    .sync-status:empty { display: none; }
+    .sync-saving  { background: #fef3c7; color: #92400e; }
+    .sync-saved   { background: #dcfce7; color: #166534; }
+    .sync-error   { background: #fee2e2; color: #991b1b; cursor: pointer; }
+    .sync-loading { background: #e0f2fe; color: #0369a1; }
+    .sync-offline { background: #f1f5f9; color: #64748b; }
+
+    /* ── Print styles ── */
+    @media print {
+      .app-header { position: static; }
+      .header-actions, .view-toggle, #add-btn { display: none !important; }
+      body { background: white; }
+      #calendar-view { height: auto; overflow: visible; }
+      #agenda-view { padding: 0; max-width: 100%; }
+      .agenda-event { cursor: default; }
+      .agenda-event:hover { filter: none; }
+      .cal-hour-slot:hover { background: none; }
+      .cal-event { cursor: default; }
+      .cal-event:hover { filter: none; }
+      .modal-overlay { display: none !important; }
+      .agenda-day { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="app-title">
+      🗓 Parker &amp; Bennett
+      <span class="subtitle">March 3–6, 2026</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Parker</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Bennett</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> Both</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="view-toggle">
+      <button class="btn active" id="btn-day"    onclick="switchView('day')">Day</button>
+      <button class="btn"        id="btn-cal"    onclick="switchView('calendar')">4-Day</button>
+      <button class="btn"        id="btn-agenda" onclick="switchView('agenda')">Agenda</button>
+    </div>
+    <button class="btn btn-primary" id="add-btn" onclick="openModal()">+ Add Event</button>
+    <button class="btn btn-outline" onclick="exportICS()" title="Download as iCal — import into Google/Apple/Outlook Calendar">📅 Export iCal</button>
+    <label  class="btn btn-outline" title="Import events from a JSON backup file" style="cursor:pointer;">
+      ⬆ Import <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+    </label>
+    <button class="btn btn-outline" onclick="window.print()">🖨 Print</button>
+    <span id="sync-status" class="sync-status" title="Azure sync status"></span>
+  </div>
+</header>
+
+<!-- ═══════════════════════ CALENDAR VIEW ════════════════════════ -->
+<div id="calendar-view">
+  <div class="cal-header-row">
+    <div class="cal-header-cell"></div>
+    <div class="cal-header-cell" id="dh0"></div>
+    <div class="cal-header-cell" id="dh1"></div>
+    <div class="cal-header-cell" id="dh2"></div>
+    <div class="cal-header-cell" id="dh3"></div>
+  </div>
+  <div class="cal-body" id="cal-body"></div>
+</div>
+
+<!-- ════════════════════════ DAY VIEW ════════════════════════════ -->
+<div id="day-view" class="active">
+  <div class="day-nav">
+    <button class="day-nav-btn" id="day-prev" onclick="navigateDay(-1)">&#8249;</button>
+    <div class="day-nav-center">
+      <span class="day-nav-label" id="day-nav-label"></span>
+      <div class="day-nav-dots" id="day-nav-dots">
+        <div class="day-nav-dot" data-i="0"></div>
+        <div class="day-nav-dot" data-i="1"></div>
+        <div class="day-nav-dot" data-i="2"></div>
+        <div class="day-nav-dot" data-i="3"></div>
+      </div>
+    </div>
+    <button class="day-nav-btn" id="day-next" onclick="navigateDay(1)">&#8250;</button>
+  </div>
+  <div class="day-swipe-viewport">
+    <div class="day-swipe-track" id="day-swipe-track">
+      <div class="day-swipe-panel" id="dsp-prev"></div>
+      <div class="day-swipe-panel" id="dsp-cur"></div>
+      <div class="day-swipe-panel" id="dsp-next"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ AGENDA VIEW ═════════════════════════ -->
+<div id="agenda-view">
+  <div id="agenda-body"></div>
+</div>
+
+<!-- ═══════════════════════════ MODAL ════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="overlayClick(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add Event</span>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ev-id">
+      <input type="hidden" id="ev-repeat-id">
+      <input type="hidden" id="ev-edit-scope" value="this">
+
+      <!-- shown when editing a repeating series -->
+      <div class="repeat-banner" id="repeat-banner" style="display:none;">
+        <span>🔁 Repeating event — editing:</span>
+        <div class="scope-btns">
+          <button type="button" class="scope-btn active" id="scope-this" onclick="setEditScope('this')">This day only</button>
+          <button type="button" class="scope-btn"        id="scope-all"  onclick="setEditScope('all')">All days</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ev-title">Title</label>
+        <input type="text" id="ev-title" class="form-control" placeholder="e.g. Breakfast, Soccer, Bedtime…">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">For</label>
+        <div class="child-selector">
+          <button type="button" class="child-btn" id="cbtn-parker"  onclick="selectChild('Parker')">Parker</button>
+          <button type="button" class="child-btn" id="cbtn-bennett" onclick="selectChild('Bennett')">Bennett</button>
+          <button type="button" class="child-btn" id="cbtn-both"    onclick="selectChild('Both')">Both</button>
+        </div>
+        <input type="hidden" id="ev-child">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ev-date">Date</label>
+        <select id="ev-date" class="form-control" onchange="syncRepeatPrimary()">
+          <option value="">— Select date —</option>
+          <option value="2026-03-03">Tuesday, March 3</option>
+          <option value="2026-03-04">Wednesday, March 4</option>
+          <option value="2026-03-05">Thursday, March 5</option>
+          <option value="2026-03-06">Friday, March 6</option>
+        </select>
+      </div>
+
+      <!-- shown only when adding a new event -->
+      <div class="form-group" id="repeat-days-group" style="display:none;">
+        <label class="form-label">Repeat on</label>
+        <div class="repeat-days" id="repeat-days-row">
+          <label class="rday-label" id="rday-2026-03-03"><input type="checkbox" value="2026-03-03"> Tue 3</label>
+          <label class="rday-label" id="rday-2026-03-04"><input type="checkbox" value="2026-03-04"> Wed 4</label>
+          <label class="rday-label" id="rday-2026-03-05"><input type="checkbox" value="2026-03-05"> Thu 5</label>
+          <label class="rday-label" id="rday-2026-03-06"><input type="checkbox" value="2026-03-06"> Fri 6</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="ev-start">Start Time</label>
+          <input type="time" id="ev-start" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ev-end">End Time</label>
+          <input type="time" id="ev-end" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ev-notes">Notes (optional)</label>
+        <textarea id="ev-notes" class="form-control" placeholder="Any extra details, reminders…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ev-location">Location (optional)</label>
+        <div class="location-wrap">
+          <input type="text" id="ev-location" class="form-control" placeholder="e.g. Soccer Field, 123 Main St…" autocomplete="off">
+          <div class="location-suggestions" id="location-suggestions"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="delete-btn" onclick="deleteEvent()" style="display:none;">Delete</button>
+      <div class="modal-footer-right">
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEvent()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const DAYS = [
+  { date: '2026-03-03', name: 'Tuesday',   abbr: 'Tue', num: 3  },
+  { date: '2026-03-04', name: 'Wednesday', abbr: 'Wed', num: 4  },
+  { date: '2026-03-05', name: 'Thursday',  abbr: 'Thu', num: 5  },
+  { date: '2026-03-06', name: 'Friday',    abbr: 'Fri', num: 6  },
+];
+
+const CAL_START = 6;   // 6 AM
+const CAL_END   = 22;  // 10 PM
+const PX_PER_HR = 64;
+const STORAGE_KEY = 'kids-schedule-v1';
+const BLOB_URL = 'https://kidsschedvxtpds.blob.core.windows.net/data/events.json' +
+  '?se=2026-12-31&sp=rcwd&spr=https&sv=2026-02-06&sr=b' +
+  '&sig=1X1I304yUqrzf3Cin15%2Bk64RnjiHdDNIQTIEGWYOjMo%3D';
+
+let events = [];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYNC STATUS
+// ─────────────────────────────────────────────────────────────────────────────
+function showSync(state, msg) {
+  const el = document.getElementById('sync-status');
+  el.className = 'sync-status sync-' + state;
+  el.textContent = msg;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AZURE BLOB STORAGE
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadFromAzure() {
+  showSync('loading', '⟳ Loading…');
+  try {
+    const r = await fetch(BLOB_URL);
+    if (r.ok) {
+      events = await r.json();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); // offline backup
+    } else {
+      throw new Error(`HTTP ${r.status}`);
+    }
+    showSync('saved', '☁ Live');
+    setTimeout(() => { if (document.getElementById('sync-status').textContent === '☁ Live') showSync('', ''); }, 3000);
+  } catch (e) {
+    // Fall back to localStorage when offline
+    try { events = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch {}
+    showSync('offline', '⚠ Offline (local)');
+    console.warn('Could not reach Azure, using local cache:', e);
+  }
+  renderAll();
+}
+
+async function persist() {
+  const body = JSON.stringify(events);
+  localStorage.setItem(STORAGE_KEY, body); // always keep local backup
+  showSync('saving', '⟳ Saving…');
+  try {
+    const r = await fetch(BLOB_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-ms-blob-type': 'BlockBlob',
+      },
+      body,
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    showSync('saved', '✓ Saved');
+    setTimeout(() => { if (document.getElementById('sync-status').textContent === '✓ Saved') showSync('', ''); }, 2500);
+  } catch (e) {
+    showSync('error', '⚠ Save failed — retry?');
+    document.getElementById('sync-status').onclick = () => persist();
+    console.error('Azure save error:', e);
+  }
+}
+
+// Auto-refresh every 30s so grandparents see updates without reloading
+setInterval(async () => {
+  try {
+    const r = await fetch(BLOB_URL);
+    if (!r.ok) return;
+    const fresh = await r.json();
+    if (JSON.stringify(fresh) !== JSON.stringify(events)) {
+      events = fresh;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      renderAll();
+    }
+  } catch { /* silently ignore — no banner for background refresh */ }
+}, 30000);
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data)) throw new Error();
+      if (!confirm(`Import ${data.length} event(s)? This will replace the current schedule.`)) return;
+      events = data;
+      await persist();
+      renderAll();
+    } catch {
+      alert('Could not read file — make sure it is a valid events backup.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function exportICS() {
+  if (!events.length) { alert('No events to export yet.'); return; }
+
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const fmtDT = (date, time) => {
+    // date: "2026-03-03", time: "07:30" → "20260303T073000"
+    return date.replace(/-/g, '') + 'T' + (time || '00:00').replace(':', '') + '00';
+  };
+
+  // Fold long lines per RFC 5545 (max 75 octets, continuation with space)
+  const fold = str =>
+    str.match(/.{1,73}/g).join('\r\n ');
+
+  const escICS = s =>
+    (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Parker & Bennett Schedule//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Parker & Bennett — March 3-6',
+  ];
+
+  events.forEach(ev => {
+    const dtStart = fmtDT(ev.date, ev.start);
+    const dtEnd   = ev.end ? fmtDT(ev.date, ev.end) : fmtDT(ev.date, ev.start);
+
+    // Build description: who + notes
+    const descParts = [`For: ${ev.child}`];
+    if (ev.notes)    descParts.push(ev.notes);
+    if (ev.repeatId) descParts.push('(Repeating event)');
+    const desc = descParts.join(' | ');
+
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${ev.id}@kids-schedule`);
+    lines.push(`DTSTAMP:${stamp}`);
+    lines.push(`DTSTART:${dtStart}`);
+    lines.push(`DTEND:${dtEnd}`);
+    lines.push(fold(`SUMMARY:${escICS(ev.title)}`));
+    lines.push(fold(`DESCRIPTION:${escICS(desc)}`));
+    if (ev.location) lines.push(fold(`LOCATION:${escICS(ev.location)}`));
+    lines.push('END:VEVENT');
+  });
+
+  lines.push('END:VCALENDAR');
+
+  const ics = lines.join('\r\n');
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: 'parker-bennett-schedule.ics'
+  });
+  a.click();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function toMin(t) {
+  const [h, m] = (t || '00:00').split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+function childClass(child) {
+  return 'child-' + (child || 'both').toLowerCase();
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function mapsUrl(location) {
+  return 'https://www.google.com/maps/search/' + encodeURIComponent(location);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCATION AUTOCOMPLETE  (Nominatim / OpenStreetMap — no API key required)
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+  let debounceTimer = null;
+  let activeIdx = -1;
+  let suggestions = [];
+
+  const getInput = () => document.getElementById('ev-location');
+  const getDrop  = () => document.getElementById('location-suggestions');
+
+  function closeDrop() {
+    getDrop().classList.remove('open');
+    activeIdx = -1;
+  }
+
+  function openDrop(items) {
+    const drop = getDrop();
+    drop.innerHTML = '';
+    activeIdx = -1;
+    suggestions = items;
+
+    if (!items.length) { closeDrop(); return; }
+
+    items.forEach((item, i) => {
+      const parts = item.display_name.split(', ');
+      const main  = parts.slice(0, 2).join(', ');
+      const sub   = parts.slice(2).join(', ');
+
+      const el = document.createElement('div');
+      el.className = 'location-suggestion';
+      el.innerHTML = `<div class="sug-main">${esc(main)}</div>${sub ? `<div class="sug-sub">${esc(sub)}</div>` : ''}`;
+      el.onmousedown = (e) => {
+        e.preventDefault();      // keep input focus
+        e.stopPropagation();     // don't let click bubble to overlay
+        _justPickedSuggestion = true;
+        setTimeout(() => { _justPickedSuggestion = false; }, 200);
+        getInput().value = item.display_name;
+        closeDrop();
+      };
+      drop.appendChild(el);
+    });
+
+    drop.classList.add('open');
+  }
+
+  function setActive(idx) {
+    const items = getDrop().querySelectorAll('.location-suggestion');
+    items.forEach((el, i) => el.classList.toggle('active', i === idx));
+    activeIdx = idx;
+  }
+
+  async function fetchSuggestions(query) {
+    const drop = getDrop();
+    drop.innerHTML = '<div class="location-searching">Searching…</div>';
+    drop.classList.add('open');
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&addressdetails=0`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      openDrop(data);
+    } catch {
+      closeDrop();
+    }
+  }
+
+  // Attach listeners after DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {}, false);
+  // Use event delegation on the modal so it works after re-renders
+  document.addEventListener('input', e => {
+    if (e.target.id !== 'ev-location') return;
+    const q = e.target.value.trim();
+    clearTimeout(debounceTimer);
+    if (q.length < 3) { closeDrop(); return; }
+    debounceTimer = setTimeout(() => fetchSuggestions(q), 380);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.id !== 'ev-location') return;
+    const drop = getDrop();
+    if (!drop.classList.contains('open')) return;
+    const items = drop.querySelectorAll('.location-suggestion');
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive(Math.min(activeIdx + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive(Math.max(activeIdx - 1, 0));
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault();
+      getInput().value = suggestions[activeIdx].display_name;
+      closeDrop();
+    } else if (e.key === 'Escape') {
+      closeDrop();
+    }
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('mousedown', e => {
+    if (!e.target.closest('.location-wrap')) closeDrop();
+  });
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VIEW SWITCHING
+// ─────────────────────────────────────────────────────────────────────────────
+let currentView = 'day';
+let currentDayIdx = 0;
+
+function switchView(v) {
+  currentView = v;
+  document.getElementById('day-view').classList.toggle('active',      v === 'day');
+  document.getElementById('calendar-view').classList.toggle('active', v === 'calendar');
+  document.getElementById('agenda-view').classList.toggle('active',   v === 'agenda');
+  document.getElementById('btn-day').classList.toggle('active',    v === 'day');
+  document.getElementById('btn-cal').classList.toggle('active',     v === 'calendar');
+  document.getElementById('btn-agenda').classList.toggle('active',  v === 'agenda');
+}
+
+function navigateDay(dir) {
+  const newIdx = currentDayIdx + dir;
+  if (newIdx < 0 || newIdx >= DAYS.length) return;
+  const t  = document.getElementById('day-swipe-track');
+  const vp = document.querySelector('.day-swipe-viewport');
+  t.style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+  t.style.transform  = `translateX(${-33.3333 + (dir < 0 ? 100/3 : -100/3)}%)`;
+  t.addEventListener('transitionend', () => {
+    currentDayIdx = newIdx;
+    renderDayView();
+  }, { once: true });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED: build a single day column into `container` (used by day + week views)
+// ─────────────────────────────────────────────────────────────────────────────
+function buildDayColumn(day, col) {
+  const totalHours = CAL_END - CAL_START;
+  col.className = 'cal-day-col';
+  col.style.height = `${totalHours * PX_PER_HR}px`;
+
+  for (let h = CAL_START; h < CAL_END; h++) {
+    const top = (h - CAL_START) * PX_PER_HR;
+    const slot = document.createElement('div');
+    slot.className = 'cal-hour-slot';
+    slot.style.cssText = `top:${top}px`;
+    slot.onclick = () => openModal(day.date, `${String(h).padStart(2,'0')}:00`);
+    col.appendChild(slot);
+    const half = document.createElement('div');
+    half.className = 'cal-half-line';
+    half.style.top = `${top + PX_PER_HR / 2}px`;
+    col.appendChild(half);
+  }
+
+  const dayEvs = events
+    .filter(e => e.date === day.date)
+    .sort((a, b) => a.start.localeCompare(b.start));
+
+  dayEvs.forEach(ev => {
+    const startMin = toMin(ev.start);
+    const endMin   = ev.end ? toMin(ev.end) : startMin + 60;
+    const topPx    = (startMin - CAL_START * 60) / 60 * PX_PER_HR;
+    const htPx     = Math.max((endMin - startMin) / 60 * PX_PER_HR, 22);
+    const el = document.createElement('div');
+    el.className = `cal-event ${childClass(ev.child)}`;
+    el.style.cssText = `top:${topPx}px; height:${htPx}px;`;
+    el.innerHTML = `
+      <div class="ev-title">${ev.repeatId ? '🔁 ' : ''}${esc(ev.title)}</div>
+      ${htPx > 38 ? `<div class="ev-time">${fmtTime(ev.start)}${ev.end ? ' – ' + fmtTime(ev.end) : ''}</div>` : ''}
+      ${htPx > 54 && ev.location ? `<div class="ev-location"><a href="${mapsUrl(ev.location)}" target="_blank" onclick="event.stopPropagation()">📍 ${esc(ev.location)}</a></div>` : ''}
+      ${htPx > 70 ? `<div class="ev-who">${esc(ev.child)}</div>` : ''}
+    `;
+    el.onclick = e => { e.stopPropagation(); openModal(null, null, ev.id); };
+    col.appendChild(el);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DAY VIEW RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// DAY VIEW RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function buildDayGrid(dayIdx) {
+  const grid = document.createElement('div');
+  grid.className = 'day-grid';
+  if (dayIdx < 0 || dayIdx >= DAYS.length) return grid; // empty panel at boundary
+
+  const timeCol = document.createElement('div');
+  timeCol.className = 'cal-time-col';
+  for (let h = CAL_START; h <= CAL_END; h++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'cal-time-label';
+    if (h < CAL_END)
+      lbl.textContent = h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+    timeCol.appendChild(lbl);
+  }
+  grid.appendChild(timeCol);
+
+  const col = document.createElement('div');
+  buildDayColumn(DAYS[dayIdx], col);
+  grid.appendChild(col);
+  return grid;
+}
+
+function renderDayView() {
+  const day = DAYS[currentDayIdx];
+
+  // Nav label + dots + arrow state
+  document.getElementById('day-nav-label').textContent = `${day.name}, March ${day.num}`;
+  document.querySelectorAll('.day-nav-dot').forEach((d, i) =>
+    d.classList.toggle('active', i === currentDayIdx)
+  );
+  document.getElementById('day-prev').disabled = currentDayIdx === 0;
+  document.getElementById('day-next').disabled = currentDayIdx === DAYS.length - 1;
+
+  // Fill all 3 panels: [prev, current, next]
+  [['dsp-prev', currentDayIdx - 1],
+   ['dsp-cur',  currentDayIdx],
+   ['dsp-next', currentDayIdx + 1]].forEach(([id, idx]) => {
+    const panel = document.getElementById(id);
+    panel.innerHTML = '';
+    panel.appendChild(buildDayGrid(idx));
+  });
+
+  // Reset track to center (no animation)
+  const track = document.getElementById('day-swipe-track');
+  track.style.transition = 'none';
+  track.style.transform  = 'translateX(-33.3333%)';
+}
+
+// ── Swipe with drag-follow + animated snap ────────────────────────────────────
+(function () {
+  let startX = 0, startY = 0, dragging = false, lockAxis = null;
+
+  const track = () => document.getElementById('day-swipe-track');
+  const vp    = () => document.querySelector('.day-swipe-viewport');
+
+  function pctOffset(extra = 0) {
+    return -33.3333 + (extra / vp().offsetWidth) * 100;
+  }
+
+  document.addEventListener('touchstart', e => {
+    if (!e.target.closest('#day-view')) return;
+    startX   = e.touches[0].clientX;
+    startY   = e.touches[0].clientY;
+    dragging = true;
+    lockAxis = null;
+    track().style.transition = 'none';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging || !e.target.closest('#day-view')) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+
+    // Lock axis on first notable movement
+    if (!lockAxis) {
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6)
+        lockAxis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+    }
+    if (lockAxis !== 'x') return;
+
+    // Rubber-band resistance at boundaries
+    let effective = dx;
+    if ((currentDayIdx === 0 && dx > 0) || (currentDayIdx === DAYS.length - 1 && dx < 0))
+      effective = dx * 0.25;
+
+    track().style.transform = `translateX(${pctOffset(effective)}%)`;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!dragging || lockAxis !== 'x') { dragging = false; return; }
+    dragging = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const t  = track();
+
+    const canNext = currentDayIdx < DAYS.length - 1;
+    const canPrev = currentDayIdx > 0;
+    const threshold = vp().offsetWidth * 0.28;
+
+    if (dx < -threshold && canNext) {
+      // Slide out to left → commit to next day
+      t.style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+      t.style.transform  = `translateX(${pctOffset(-vp().offsetWidth)}%)`;
+      t.addEventListener('transitionend', () => {
+        currentDayIdx++;
+        renderDayView();
+      }, { once: true });
+    } else if (dx > threshold && canPrev) {
+      // Slide out to right → commit to prev day
+      t.style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+      t.style.transform  = `translateX(${pctOffset(vp().offsetWidth)}%)`;
+      t.addEventListener('transitionend', () => {
+        currentDayIdx--;
+        renderDayView();
+      }, { once: true });
+    } else {
+      // Spring back to center
+      t.style.transition = 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1)';
+      t.style.transform  = 'translateX(-33.3333%)';
+    }
+  }, { passive: true });
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CALENDAR (4-DAY) RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderCalendar() {
+  DAYS.forEach((d, i) => {
+    document.getElementById(`dh${i}`).innerHTML =
+      `<div class="day-abbr">${d.abbr}</div><div class="day-num">${d.num}</div>`;
+  });
+
+  const body = document.getElementById('cal-body');
+  body.innerHTML = '';
+
+  // Time label column
+  const timeCol = document.createElement('div');
+  timeCol.className = 'cal-time-col';
+  for (let h = CAL_START; h <= CAL_END; h++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'cal-time-label';
+    if (h < CAL_END)
+      lbl.textContent = h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+    timeCol.appendChild(lbl);
+  }
+  body.appendChild(timeCol);
+
+  DAYS.forEach(day => {
+    const col = document.createElement('div');
+    buildDayColumn(day, col);
+    body.appendChild(col);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AGENDA RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderAgenda() {
+  const body = document.getElementById('agenda-body');
+  body.innerHTML = '';
+
+  DAYS.forEach(day => {
+    const section = document.createElement('div');
+    section.className = 'agenda-day';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'agenda-day-header';
+    hdr.innerHTML = `${day.name} <span class="date-label">March ${day.num}, 2026</span>`;
+    section.appendChild(hdr);
+
+    const dayEvs = events
+      .filter(e => e.date === day.date)
+      .sort((a, b) => a.start.localeCompare(b.start));
+
+    if (!dayEvs.length) {
+      const empty = document.createElement('div');
+      empty.className = 'agenda-empty';
+      empty.textContent = 'No events scheduled.';
+      section.appendChild(empty);
+    } else {
+      dayEvs.forEach(ev => {
+        const row = document.createElement('div');
+        row.className = `agenda-event ${childClass(ev.child)}`;
+        row.innerHTML = `
+          <div class="agenda-event-time">
+            ${fmtTime(ev.start)}${ev.end ? '<br>' + fmtTime(ev.end) : ''}
+          </div>
+          <div class="agenda-event-body">
+            <div class="agenda-event-title">${ev.repeatId ? '🔁 ' : ''}${esc(ev.title)}</div>
+            <div class="agenda-event-who">${esc(ev.child)}</div>
+            ${ev.notes ? `<div class="agenda-event-notes">${esc(ev.notes)}</div>` : ''}
+            ${ev.location ? `<div class="agenda-event-location">📍 <a href="${mapsUrl(ev.location)}" target="_blank" onclick="event.stopPropagation()">${esc(ev.location)}</a></div>` : ''}
+          </div>
+        `;
+        row.onclick = () => openModal(null, null, ev.id);
+        section.appendChild(row);
+      });
+    }
+
+    body.appendChild(section);
+  });
+}
+
+function renderAll() {
+  renderDayView();
+  renderCalendar();
+  renderAgenda();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+let _editId = null;
+let _justPickedSuggestion = false;
+
+// ── Repeat-day checkbox helpers ───────────────────────────────────────────────
+function setRepeatChecked(date, checked, primary) {
+  const lbl = document.getElementById(`rday-${date}`);
+  if (!lbl) return;
+  lbl.querySelector('input').checked = checked;
+  lbl.className = 'rday-label' + (primary ? ' primary' : checked ? ' checked' : '');
+}
+
+function syncRepeatPrimary() {
+  const date = document.getElementById('ev-date').value;
+  DAYS.forEach(d => {
+    const lbl = document.getElementById(`rday-${d.date}`);
+    if (!lbl) return;
+    const isPrimary = d.date === date;
+    if (isPrimary) {
+      lbl.querySelector('input').checked = true;
+      lbl.className = 'rday-label primary';
+    } else if (lbl.className.includes('primary')) {
+      // was primary, demote
+      lbl.querySelector('input').checked = false;
+      lbl.className = 'rday-label';
+    }
+  });
+  // show/hide the repeat row once a date is picked
+  document.getElementById('repeat-days-group').style.display = date ? 'block' : 'none';
+}
+
+// Wire checkbox clicks to update styling
+document.addEventListener('change', e => {
+  if (!e.target.matches('#repeat-days-row input[type=checkbox]')) return;
+  const lbl = e.target.closest('.rday-label');
+  const isPrimary = lbl.classList.contains('primary');
+  if (isPrimary) { e.target.checked = true; return; } // can't uncheck primary day
+  lbl.className = 'rday-label' + (e.target.checked ? ' checked' : '');
+});
+
+// ── Edit scope (this vs all) ──────────────────────────────────────────────────
+function setEditScope(scope) {
+  document.getElementById('ev-edit-scope').value = scope;
+  document.getElementById('scope-this').classList.toggle('active', scope === 'this');
+  document.getElementById('scope-all').classList.toggle('active', scope === 'all');
+}
+
+// ── Open modal ────────────────────────────────────────────────────────────────
+function openModal(date, startTime, id) {
+  _editId = id || null;
+
+  // When opening a blank modal from the header button, default to the current day view date
+  if (!date && !id && currentView === 'day') {
+    date = DAYS[currentDayIdx].date;
+  }
+
+  // Reset child buttons
+  ['parker','bennett','both'].forEach(c =>
+    document.getElementById(`cbtn-${c}`).className = 'child-btn'
+  );
+
+  // Reset repeat UI
+  DAYS.forEach(d => setRepeatChecked(d.date, false, false));
+  document.getElementById('repeat-days-group').style.display = 'none';
+  document.getElementById('repeat-banner').style.display = 'none';
+  document.getElementById('ev-repeat-id').value = '';
+  setEditScope('this');
+
+  document.getElementById('modal-title').textContent = id ? 'Edit Event' : 'Add Event';
+  document.getElementById('delete-btn').style.display = id ? 'block' : 'none';
+
+  if (id) {
+    const ev = events.find(e => e.id === id);
+    if (!ev) return;
+    document.getElementById('ev-id').value       = ev.id;
+    document.getElementById('ev-title').value    = ev.title;
+    document.getElementById('ev-date').value     = ev.date;
+    document.getElementById('ev-start').value    = ev.start;
+    document.getElementById('ev-end').value      = ev.end || '';
+    document.getElementById('ev-notes').value    = ev.notes || '';
+    document.getElementById('ev-location').value = ev.location || '';
+    document.getElementById('ev-repeat-id').value = ev.repeatId || '';
+    selectChild(ev.child);
+
+    // Show series banner if part of a repeat group
+    if (ev.repeatId) {
+      document.getElementById('repeat-banner').style.display = 'flex';
+    }
+  } else {
+    document.getElementById('ev-id').value       = '';
+    document.getElementById('ev-title').value    = '';
+    document.getElementById('ev-date').value     = date || '';
+    document.getElementById('ev-start').value    = startTime || '';
+    document.getElementById('ev-end').value      = '';
+    document.getElementById('ev-notes').value    = '';
+    document.getElementById('ev-location').value = '';
+    document.getElementById('ev-child').value    = '';
+
+    // Pre-check the clicked day and show repeat row
+    if (date) {
+      setRepeatChecked(date, true, true);
+      document.getElementById('repeat-days-group').style.display = 'block';
+    }
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('ev-title').focus(), 80);
+}
+
+function selectChild(child) {
+  document.getElementById('ev-child').value = child;
+  ['parker','bennett','both'].forEach(c => {
+    document.getElementById(`cbtn-${c}`).className =
+      'child-btn' + (c === child.toLowerCase() ? ` sel-${c}` : '');
+  });
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  _editId = null;
+}
+
+function overlayClick(e) {
+  if (e.target !== document.getElementById('modal-overlay')) return;
+  if (_justPickedSuggestion) return;
+  closeModal();
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+function saveEvent() {
+  const title    = document.getElementById('ev-title').value.trim();
+  const child    = document.getElementById('ev-child').value;
+  const date     = document.getElementById('ev-date').value;
+  const start    = document.getElementById('ev-start').value;
+  const end      = document.getElementById('ev-end').value;
+  const notes    = document.getElementById('ev-notes').value.trim();
+  const location = document.getElementById('ev-location').value.trim();
+  const repeatId = document.getElementById('ev-repeat-id').value;
+  const scope    = document.getElementById('ev-edit-scope').value;
+
+  if (!title) { alert('Please enter a title for this event.'); return; }
+  if (!child) { alert('Please select who this event is for (Parker, Bennett, or Both).'); return; }
+  if (!date)  { alert('Please select a date.'); return; }
+  if (!start) { alert('Please enter a start time.'); return; }
+
+  if (_editId) {
+    // ── Editing existing event ────────────────────────────────────────────────
+    if (repeatId && scope === 'all') {
+      // Update all events in the series (keep each event's own date)
+      events = events.map(e =>
+        e.repeatId === repeatId
+          ? { ...e, title, child, start, end, notes, location }
+          : e
+      );
+    } else {
+      // Update just this one
+      const i = events.findIndex(e => e.id === _editId);
+      if (i > -1) events[i] = { id: _editId, title, child, date, start, end, notes, location, repeatId: repeatId || undefined };
+    }
+  } else {
+    // ── Adding new event ──────────────────────────────────────────────────────
+    const checkedDates = [...document.querySelectorAll('#repeat-days-row input:checked')]
+      .map(cb => cb.value);
+
+    const targetDates = checkedDates.length > 0 ? checkedDates : [date];
+    const newRepeatId = targetDates.length > 1 ? uid() : undefined;
+
+    targetDates.forEach(d => {
+      events.push({ id: uid(), title, child, date: d, start, end, notes, location, repeatId: newRepeatId });
+    });
+  }
+
+  persist();   // async — fire and forget, status shown in header
+  renderAll();
+  closeModal();
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function deleteEvent() {
+  if (!_editId) return;
+  const ev = events.find(e => e.id === _editId);
+  if (!ev) return;
+
+  if (ev.repeatId) {
+    const seriesCount = events.filter(e => e.repeatId === ev.repeatId).length;
+    const choice = confirm(
+      `This event repeats on ${seriesCount} day(s).\n\nOK = Delete ALL days in the series\nCancel = Delete this day only`
+    );
+    if (choice) {
+      events = events.filter(e => e.repeatId !== ev.repeatId);
+    } else {
+      events = events.filter(e => e.id !== _editId);
+    }
+  } else {
+    if (!confirm('Delete this event?')) return;
+    events = events.filter(e => e.id !== _editId);
+  }
+
+  persist();   // async — fire and forget
+  renderAll();
+  closeModal();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KEYBOARD
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRINT — prefer agenda view for printing (more readable)
+// ─────────────────────────────────────────────────────────────────────────────
+window.addEventListener('beforeprint', () => {
+  if (currentView === 'day' || currentView === 'agenda') {
+    document.getElementById('agenda-view').style.display  = 'block';
+    document.getElementById('day-view').style.display     = 'none';
+    document.getElementById('calendar-view').style.display = 'none';
+  }
+});
+window.addEventListener('afterprint', () => {
+  document.getElementById('agenda-view').style.display  = '';
+  document.getElementById('calendar-view').style.display = '';
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+loadFromAzure();
+</script>
+</body>
+</html>
