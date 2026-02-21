@@ -11,26 +11,25 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Upload static site to Azure Blob Storage
-        uses: azure/CLI@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az storage blob upload \
-              --account-name kidsschedvxtpds \
-              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
-              --container-name '$web' \
-              --file index.html \
-              --name index.html \
-              --content-type "text/html" \
-              --overwrite
-            az storage blob upload \
-              --account-name kidsschedvxtpds \
-              --account-key "${{ secrets.AZURE_STORAGE_KEY }}" \
-              --container-name '$web' \
-              --file robots.txt \
-              --name robots.txt \
-              --content-type "text/plain" \
-              --overwrite
+        env:
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
+        run: |
+          az storage blob upload \
+            --account-name kidsschedvxtpds \
+            --account-key "$AZURE_STORAGE_KEY" \
+            --container-name '$web' \
+            --file index.html \
+            --name index.html \
+            --content-type "text/html" \
+            --overwrite
+          az storage blob upload \
+            --account-name kidsschedvxtpds \
+            --account-key "$AZURE_STORAGE_KEY" \
+            --container-name '$web' \
+            --file robots.txt \
+            --name robots.txt \
+            --content-type "text/plain" \
+            --overwrite
 
       - name: Install function dependencies
         run: |
