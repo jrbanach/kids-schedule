@@ -597,6 +597,7 @@ const FUNC_URL = 'https://kids-schedule-fn.azurewebsites.net/api/saveEvents' +
   '?code=SDZZkCVvcgPpWnSqDhwq4a_DuplxfhHVMk8ADR0JTLAdAzFuWixqhQ%3D%3D';
 
 let events = [];
+let persistInFlight = false; // guard: don't auto-refresh while a save is in-flight
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SYNC STATUS
@@ -613,7 +614,7 @@ function showSync(state, msg) {
 async function loadFromAzure() {
   showSync('loading', '⟳ Loading…');
   try {
-    const r = await fetch(BLOB_URL);
+    const r = await fetch(BLOB_URL, { cache: 'no-store' });
     if (r.ok) {
       events = await r.json();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); // offline backup
@@ -635,6 +636,7 @@ async function persist() {
   const body = JSON.stringify(events);
   localStorage.setItem(STORAGE_KEY, body); // always keep local backup
   showSync('saving', '⟳ Saving…');
+  persistInFlight = true;
   try {
     const r = await fetch(FUNC_URL, {
       method: 'POST',
@@ -648,13 +650,16 @@ async function persist() {
     showSync('error', '⚠ Save failed — retry?');
     document.getElementById('sync-status').onclick = () => persist();
     console.error('Azure save error:', e);
+  } finally {
+    persistInFlight = false;
   }
 }
 
 // Auto-refresh every 30s so grandparents see updates without reloading
 setInterval(async () => {
+  if (persistInFlight) return; // skip if a save is still in progress
   try {
-    const r = await fetch(BLOB_URL);
+    const r = await fetch(BLOB_URL, { cache: 'no-store' });
     if (!r.ok) return;
     const fresh = await r.json();
     if (JSON.stringify(fresh) !== JSON.stringify(events)) {
