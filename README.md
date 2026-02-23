@@ -17,7 +17,7 @@ A self-contained single-page web app for managing a 4-day kids schedule (March 3
 | Feature | Details |
 |---|---|
 | **Day view** | Single-day view with `‹ Date ›` nav, swipe left/right between days, animated slide transitions with rubber-band at boundaries |
-| **4-Day view** | Outlook-style grid showing all 4 days with time slots |
+| **4-Day view** | Outlook-style grid showing all 4 days with time slots, starting at 5 AM |
 | **Agenda view** | Clean per-day list, easy to read on mobile or print |
 | **Smart default view** | Mobile devices (phone/tablet) open in Day view; desktop/laptop opens in 4-Day view automatically |
 | **Add / Edit / Delete events** | Modal form with title, child selector, date, start/end time, notes, location |
@@ -157,7 +157,9 @@ This project was built entirely in Copilot CLI sessions. Here's the progression:
 8. **Day view + swipe** — Single-day calendar with `‹ Date ›` nav and position dots; 3-view toggle (Day / 4-Day / Agenda); full drag-follow swipe with animated slide and rubber-band resistance at boundaries
 9. **GitHub + CI/CD** — Repo created at `jrbanach/kids-schedule`; GitHub Actions auto-deploys on push to `master`
 10. **Security hardening** — Azure Function write proxy (no write SAS in browser); CSP meta tag; robots.txt + noindex meta; `rel="noopener noreferrer"` on external links; private blob container; read-only short-lived SAS
-11. **Smart default view** — Mobile devices open in Day view; desktop/laptop opens in 4-Day view (detected via `navigator.userAgent`)
+11. **Smart default view** — Mobile devices open in Day view; desktop/laptop opens in 4-Day view (detected via `window.innerWidth`)
+12. **Bug fix: event revert** — Azure Blob had no `Cache-Control` header; browsers were heuristically caching the response for hours, so the 30s auto-refresh kept returning stale data and overwriting local changes. Fixed by adding `{ cache: 'no-store' }` to all blob `fetch()` calls. Also added a `persistInFlight` guard so the auto-refresh is skipped while a save POST is still in-flight.
+13. **Calendar start time** — Changed day/4-day grid start from 6 AM to 5 AM (`CAL_START = 5`)
 
 ---
 
